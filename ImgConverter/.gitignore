@@ -1,0 +1,6 @@
+.git/
+.qtcreator/
+build/
+*.ppm
+*.bmp
+*.jpg
