@@ -61,6 +61,18 @@ PACKED_STRUCT_BEGIN RawBGR {
 }
 PACKED_STRUCT_END;
 
+[[nodiscard]] bool ValidateFileHeader(const BitmapFileHeader& header) noexcept {
+    return header.bm == std::array<char, 2>{'B', 'M'} &&
+           header.padding == kBMPPadding;
+}
+
+[[nodiscard]] bool ValidateInfoHeader(const BitmapInfoHeader& header) noexcept {
+    return header.size == kBMPInfoHeaderSize && header.planes == kRGBPlanes &&
+           header.bits == kBitInPixel && header.compress == kCompress &&
+           header.imp_colors == kImpColors && 0 < header.width &&
+           0 < header.height;
+}
+
 }  // namespace
 
 // напишите эту функцию
@@ -127,11 +139,19 @@ Image LoadBMP(const Path& file) {
     BitmapFileHeader bmp_file_header{};
     BitmapInfoHeader bmp_info_header{};
 
-    ifs.read(reinterpret_cast<char*>(&bmp_file_header),
-             sizeof(bmp_file_header));
+    if (!ifs.read(reinterpret_cast<char*>(&bmp_file_header),
+                  sizeof(bmp_file_header)) ||
+        !ValidateFileHeader(bmp_file_header)) {
+        //
+        return {};
+    }
 
-    ifs.read(reinterpret_cast<char*>(&bmp_info_header),
-             sizeof(bmp_info_header));
+    if (!ifs.read(reinterpret_cast<char*>(&bmp_info_header),
+                  sizeof(bmp_info_header)) ||
+        !ValidateInfoHeader(bmp_info_header)) {
+        //
+        return {};
+    }
 
     const auto kWidth = static_cast<int>(bmp_info_header.width);
     const auto kHeigth = static_cast<int>(bmp_info_header.height);
